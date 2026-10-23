@@ -1,4 +1,4 @@
-
+"use server"
 import { db } from "@/lib/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
@@ -15,7 +15,7 @@ export async function createProject(data) {
 
     const { data: membership } =
       await clerkClient().organizations.getOrganizationMembershipList({
-        organizationId: organization.id,
+        organizationId: orgId,
       });
 
     const userMembership = membership.find(
