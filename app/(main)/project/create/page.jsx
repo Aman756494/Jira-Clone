@@ -1,18 +1,25 @@
 "use client";
+
+"use client";
+import { createProject } from "@/actions/projects";
 import { projectSchema } from "@/app/lib/validator";
 import OrgSwitcher from "@/components/org-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import useFetch from "@/hooks/use-fetch";
 import { useOrganization, useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const CreateProjectPage = () => {
   const { isLoaded: isOrgLoaded, membership } = useOrganization();
   const { isLoaded: isUserLoaded } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -28,11 +35,27 @@ const CreateProjectPage = () => {
     }
   }, [isOrgLoaded, isUserLoaded, membership]);
 
+  const {
+    data: project,
+    loading,
+    error,
+    fn: createProjectFn,
+  } = useFetch(createProject);
+
+  useEffect(() => {
+    if (project) {
+      toast.success("Project created successfully");
+      router.push(`/project/${project.id}`);
+    }
+  }, [loading]);
+
   if (!isOrgLoaded || !isUserLoaded) {
     return null;
   }
 
-  const onSubmit = async () => {};
+  const onSubmit = async (data) => {
+    createProjectFn(data);
+  };
 
   if (!isAdmin) {
     return (
@@ -92,9 +115,15 @@ const CreateProjectPage = () => {
           )}
         </div>
 
-        <Button type="submit" size="lg" className="bg-blue-500 text-white" >
-          Create Project
+        <Button
+          disabled={loading}
+          type="submit"
+          size="lg"
+          className="bg-blue-500 text-white"
+        >
+          {loading ? "Creating..." : "Create Project"}
         </Button>
+        {error && <p className="text-red-500 mt-2">{error.message}</p>}
       </form>
     </div>
   );
