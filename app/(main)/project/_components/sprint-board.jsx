@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SprintManager from "./sprint-manager";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import statuses from "@/data/status";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import IssueCreationDrawer from "./create-issue";
+import useFetch from "@/hooks/use-fetch";
+import { getIssueForSprint } from "@/actions/issues";
+import { BarLoader } from "react-spinners";
+import IssueCard from "@/components/issue-card";
 
 const SprintBoard = ({ sprints, projectId, orgId }) => {
   const [currentSprint, setCurrentSprint] = useState(
@@ -21,11 +25,29 @@ const SprintBoard = ({ sprints, projectId, orgId }) => {
     setIsDrawerOpen(true);
   };
 
+  const {
+    loading: issuesLoading,
+    error: issuesError,
+    fn: fetchIssues,
+    data: issues,
+    setData: setIssues,
+  } = useFetch(getIssueForSprint);
+
+  useEffect(() => {
+    if (currentSprint.id) {
+      fetchIssues(currentSprint.id);
+    }
+  }, [currentSprint.id]);
+
+  const [filteredIssues, setFilteredIssues] = useState(issues);
+
   const handleIssueCreated = () => {
-    // fetch issues again
-  }
+    fetchIssues(currentSprint.id);
+  };
 
   const onDragEnd = () => {};
+
+  if (issuesError) return <div>Error loading issues</div>;
   return (
     <div>
       {/* Sprint Manager*/}
@@ -35,6 +57,10 @@ const SprintBoard = ({ sprints, projectId, orgId }) => {
         sprints={sprints}
         projectId={projectId}
       />
+
+      {issuesLoading && (
+        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+      )}
 
       {/* Kanban Board */}
       <DragDropContext onDragEnd={onDragEnd}>
@@ -53,6 +79,27 @@ const SprintBoard = ({ sprints, projectId, orgId }) => {
                     </h3>
 
                     {/* Issues */}
+                    {issues
+                      ?.filter((issue) => issue.status === column.key)
+                      .map((issue, index) => (
+                        <Draggable
+                          key={issue.id}
+                          draggableId={issue.id}
+                          index={index}
+                        >
+                          {(provided) => {
+                            return (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                              >
+                                <IssueCard issue={issue} />
+                              </div>
+                            );
+                          }}
+                        </Draggable>
+                      ))}
 
                     {provided.placeholder}
                     {column.key === "TODO" &&
