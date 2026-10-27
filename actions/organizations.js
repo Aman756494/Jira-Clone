@@ -43,7 +43,7 @@ export async function getOrganization(slug) {
   return organization;
 }
 
-export async function getProjects(orgId) {
+export async function getOrganizationUsers(orgId) {
   const { userId } = auth();
   if (!userId) {
     throw new Error("Unauthorized");
