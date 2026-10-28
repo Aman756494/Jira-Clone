@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import SprintManager from "./sprint-manager";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import statuses from "@/data/status";
+import statuses from "@/data/status.json";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import IssueCreationDrawer from "./create-issue";
@@ -173,6 +173,7 @@ const SprintBoard = ({ sprints, projectId, orgId }) => {
                           key={issue.id}
                           draggableId={issue.id}
                           index={index}
+                          isDragDisabled={updateIssuesLoading}
                         >
                           {(provided) => {
                             return (
@@ -181,7 +182,19 @@ const SprintBoard = ({ sprints, projectId, orgId }) => {
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                               >
-                                <IssueCard issue={issue} />
+                                <IssueCard
+                                  issue={issue}
+                                  onDelete={() => fetchIssues(currentSprint.id)}
+                                  onUpdate={(updated) =>
+                                    setIssues((issues) =>
+                                      issues.map((issue) => {
+                                        if (issue.id === updated.id)
+                                          return updated;
+                                        return issue;
+                                      }),
+                                    )
+                                  }
+                                />
                               </div>
                             );
                           }}
